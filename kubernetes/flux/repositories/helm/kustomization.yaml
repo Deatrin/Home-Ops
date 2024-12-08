@@ -16,3 +16,6 @@ resources:
   - ./external-dns.yaml
   - ./ingress-nginx.yaml
   - ./k8s-gateway.yaml
+  - ./rook-ceph.yaml
+  - ./backube.yaml
+  - ./piraeus.yaml
