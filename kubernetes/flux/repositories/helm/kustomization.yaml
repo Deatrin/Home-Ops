@@ -21,3 +21,4 @@ resources:
   - ./piraeus.yaml
   - ./longhorn.yaml
   - ./csi-driver-nfs.yaml
+  - ./cloudnative-pg.yaml
