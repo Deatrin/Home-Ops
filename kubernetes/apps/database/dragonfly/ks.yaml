@@ -10,7 +10,7 @@ spec:
   targetNamespace: database
   sourceRef:
     kind: GitRepository
-    name: homelab-ops
+    name: home-kubernetes
   prune: true
   wait: true
   interval: 10m
@@ -27,9 +27,8 @@ spec:
   prune: true
   sourceRef:
     kind: GitRepository
-    name: homelab-ops
+    name: home-kubernetes
   wait: true
   interval: 10m
   dependsOn:
     - name: database-dragonfly
-    - name: storage-democratic-csi-iscsi
