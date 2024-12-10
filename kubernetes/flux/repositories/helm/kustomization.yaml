@@ -22,3 +22,4 @@ resources:
   - ./longhorn.yaml
   - ./csi-driver-nfs.yaml
   - ./cloudnative-pg.yaml
+  - ./authentik-charts.yaml
