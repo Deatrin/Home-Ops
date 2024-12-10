@@ -19,7 +19,7 @@ spec:
   interval: 10m
   dependsOn:
     - name: cloudnative-pg-cluster
-    - name: dragonfly-cluster
+    - name: database-dragonfly-cluster
   postBuild:
     substitute:
       APP: *appname
