@@ -56,10 +56,10 @@ spec:
         #   gethomepage.dev/widget.url: http://authentik-server.security
         #   gethomepage.dev/widget.key: "{{HOMEPAGE_VAR_AUTHENTIK_TOKEN}}"
         hosts:
-          - &host "{{ .Release.Name }}.${SECRET_DOMAIN}"
+          - &host "auth.${SECRET_DOMAIN}"
         paths:
           - /
-        tls: [hosts: [*host]]
+        tls: []
     worker:
       replicas: 1
       resources:
