@@ -6,13 +6,13 @@ metadata:
   name: &app qbittorrent
   namespace: flux-system
 spec:
-  targetNamespace: default
+  targetNamespace: Downloads
   commonMetadata:
     labels:
       app.kubernetes.io/name: *app
   dependsOn:
     - name: external-secrets-stores
-    - name: volsync
+    # - name: volsync
   path: ./kubernetes/main/apps/default/qbittorrent/app
   prune: true
   sourceRef:
@@ -24,12 +24,12 @@ spec:
   postBuild:
     substitute:
       APP: *app
-      GATUS_SUBDOMAIN: qb
-      VOLSYNC_CAPACITY: 2Gi
-      VOLSYNC_ACCESSMODES: ReadWriteMany
-      VOLSYNC_STORAGECLASS: ceph-filesystem
-      VOLSYNC_SNAPSHOTCLASS: csi-ceph-filesystem
-      VOLSYNC_SNAP_ACCESSMODES: ReadOnlyMany # CephFS shallow snapshot
+      # GATUS_SUBDOMAIN: qb
+      # VOLSYNC_CAPACITY: 2Gi
+      # VOLSYNC_ACCESSMODES: ReadWriteMany
+      # VOLSYNC_STORAGECLASS: ceph-filesystem
+      # VOLSYNC_SNAPSHOTCLASS: csi-ceph-filesystem
+      # VOLSYNC_SNAP_ACCESSMODES: ReadOnlyMany # CephFS shallow snapshot
 ---
 # yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
 apiVersion: kustomize.toolkit.fluxcd.io/v1
@@ -38,13 +38,13 @@ metadata:
   name: &app qbittorrent-tools
   namespace: flux-system
 spec:
-  targetNamespace: default
+  targetNamespace: downloads
   commonMetadata:
     labels:
       app.kubernetes.io/name: *app
   dependsOn:
     - name: external-secrets-stores
-  path: ./kubernetes/main/apps/default/qbittorrent/tools
+  path: ./kubernetes/apps/downloads/qbittorrent/tools
   prune: true
   sourceRef:
     kind: GitRepository

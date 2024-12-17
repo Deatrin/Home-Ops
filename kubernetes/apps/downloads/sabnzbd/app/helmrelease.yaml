@@ -22,9 +22,6 @@ spec:
     remediation:
       strategy: rollback
       retries: 3
-  dependsOn:
-    - name: rook-ceph-cluster
-      namespace: rook-ceph
   values:
     controllers:
       sabnzbd:
@@ -36,7 +33,7 @@ spec:
               repository: ghcr.io/onedr0p/sabnzbd
               tag: 4.3.3@sha256:86c645db93affcbf01cc2bce2560082bfde791009e1506dba68269b9c50bc341
             env:
-              TZ: America/New_York
+              TZ: America/Los_Angeles
               SABNZBD__PORT: &port 80
               SABNZBD__HOST_WHITELIST_ENTRIES: >-
                 sabnzbd,
@@ -45,10 +42,10 @@ spec:
                 sabnzbd.default.svc.cluster,
                 sabnzbd.default.svc.cluster.local,
                 sab.${SECRET_DOMAIN}
-              CROSS_SEED_ENABLED: false
-              CROSS_SEED_HOST: cross-seed.default.svc.cluster.local
-              CROSS_SEED_PORT: 80
-              CROSS_SEED_SLEEP_INTERVAL: 30
+              # CROSS_SEED_ENABLED: false
+              # CROSS_SEED_HOST: cross-seed.default.svc.cluster.local
+              # CROSS_SEED_PORT: 80
+              # CROSS_SEED_SLEEP_INTERVAL: 30
               PUSHOVER_ENABLED: true
             envFrom:
               - secretRef:
@@ -93,6 +90,14 @@ spec:
       app:
         annotations:
           external-dns.alpha.kubernetes.io/target: internal.${SECRET_DOMAIN}
+          # gethomepage.dev/enabled: "true"
+          # gethomepage.dev/group: Downloads
+          # gethomepage.dev/name: SABnzbd
+          # gethomepage.dev/icon: sabnzbd.png
+          # gethomepage.dev/description: NZB Download Client
+          # gethomepage.dev/widget.type: sabnzbd
+          # gethomepage.dev/widget.url: https://sab.${SECRET_DOMAIN}
+          # gethomepage.dev/widget.key: "{{ `{{HOMEPAGE_VAR_SABNZBD_TOKEN}}` }}"
         className: internal
         hosts:
           - host: sab.${SECRET_DOMAIN}
@@ -114,8 +119,8 @@ spec:
           - readOnly: true
       media:
         type: nfs
-        server: expanse.internal
-        path: /mnt/eros/Media
+        server: ${INTERNAL_NAS}
+        path: ${NAS_MEDIA}
         globalMounts:
           - path: /media/Downloads/sabnzbd
             subPath: Downloads/sabnzbd
