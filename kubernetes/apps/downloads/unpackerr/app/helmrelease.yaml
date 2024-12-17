@@ -33,7 +33,7 @@ spec:
               repository: ghcr.io/unpackerr/unpackerr
               tag: 0.14.5@sha256:dc72256942ce50d1c8a1aeb5aa85b6ae2680a36eefd2182129d8d210fce78044
             env:
-              TZ: America/New_York
+              TZ: America/Los_Angeles
               UN_WEBSERVER_METRICS: true
               UN_WEBSERVER_LOG_FILE: /logs/webserver.log
               UN_ACTIVITY: true
@@ -86,8 +86,8 @@ spec:
         type: emptyDir
       media:
         type: nfs
-        server: expanse.internal
-        path: /mnt/eros/Media
+        server: ${INTERNAL_NAS}
+        path: ${NAS_MEDIA}
         globalMounts:
           - path: /media/Downloads/qbittorrent
             subPath: Downloads/qbittorrent
