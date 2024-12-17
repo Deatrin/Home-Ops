@@ -1,8 +1,9 @@
+---
 # yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
-  name: &app sonarr
+  name: sonarr
 spec:
   interval: 30m
   chart:
@@ -22,22 +23,26 @@ spec:
       strategy: rollback
       retries: 3
   dependsOn:
-  - name: rook-ceph-cluster
-    namespace: rook-ceph
-  - name: volsync
-    namespace: storage
+    - name: rook-ceph-cluster
+      namespace: rook-ceph
   values:
     controllers:
       sonarr:
-        labels:
-          nfsMount: "true"
         annotations:
           reloader.stakater.com/auto: "true"
+        initContainers:
+          init-db:
+            image:
+              repository: ghcr.io/onedr0p/postgres-init
+              tag: 16
+            envFrom: &envFrom
+              - secretRef:
+                  name: sonarr-secret
         containers:
           app:
             image:
-              repository: ghcr.io/joryirving/sonarr-develop
-              tag: 4.0.11.2762@sha256:82357daa6f84edf336f63a93f7e7c3d6eae3cdfd2b7dfbd52da550b366d8c348
+              repository: ghcr.io/onedr0p/sonarr-develop
+              tag: 4.0.11.2724@sha256:371517bc99a5c755bea0c73e8e9fcd23ae436a593fb4a116368947c9c9182977
             env:
               SONARR__APP__INSTANCENAME: Sonarr
               SONARR__APP__THEME: dark
@@ -47,10 +52,8 @@ spec:
               SONARR__LOG__LEVEL: info
               SONARR__SERVER__PORT: &port 80
               SONARR__UPDATE__BRANCH: develop
-              TZ: ${TIMEZONE}
-            envFrom:
-            - secretRef:
-                name: sonarr-secret
+              TZ: America/New_York
+            envFrom: *envFrom
             probes:
               liveness: &probes
                 enabled: true
@@ -72,7 +75,7 @@ spec:
               requests:
                 cpu: 100m
               limits:
-                memory: 2Gi
+                memory: 4Gi
     defaultPodOptions:
       securityContext:
         runAsNonRoot: true
@@ -83,46 +86,48 @@ spec:
         seccompProfile: { type: RuntimeDefault }
     service:
       app:
-        controller: *app
+        controller: sonarr
         ports:
           http:
             port: *port
     ingress:
       app:
-        className: internal
         annotations:
-          gethomepage.dev/enabled: "true"
-          gethomepage.dev/group: Downloads
-          gethomepage.dev/name: Sonarr
-          gethomepage.dev/icon: sonarr.png
-          gethomepage.dev/description: TV Downloads
-          gethomepage.dev/widget.type: sonarr
-          gethomepage.dev/widget.url: http://sonarr.downloads
-          gethomepage.dev/widget.key: "{{ `{{HOMEPAGE_VAR_SONARR_TOKEN}}` }}"
           external-dns.alpha.kubernetes.io/target: internal.${SECRET_DOMAIN}
+          # gethomepage.dev/enabled: "true"
+          # gethomepage.dev/group: Downloads
+          # gethomepage.dev/name: Sonarr
+          # gethomepage.dev/icon: sonarr.svg
+          # gethomepage.dev/widget.type: sonarr
+          # gethomepage.dev/widget.url: http://sonarr.downloads
+          # gethomepage.dev/widget.key: "{{`{{HOMEPAGE_VAR_SONARR_TOKEN}}`}}"
+        className: internal
         hosts:
-        - host: "{{ .Release.Name }}.${SECRET_DOMAIN}"
-          paths:
-          - path: /
-            service:
-              identifier: app
-              port: http
+          - host: "{{ .Release.Name }}.${SECRET_DOMAIN}"
+            paths:
+              - path: /
+                service:
+                  identifier: app
+                  port: http
     persistence:
       config:
-        existingClaim: *app
+        existingClaim: sonarr
       scripts:
         type: configMap
         name: sonarr-configmap
         defaultMode: 0775
         globalMounts:
+          - path: /scripts/pushover-notify.sh
+            subPath: pushover-notify.sh
+            readOnly: true
           - path: /scripts/refresh-series.sh
             subPath: refresh-series.sh
             readOnly: true
       tmp:
         type: emptyDir
-      data:
+      media:
         type: nfs
-        server: voyager.internal
-        path: ${SECRET_NFS_DATA:=temp}
+        server: ${INTERNAL_NAS}
+        path: ${NAS_MEDIA}
         globalMounts:
-        - path: /data
+          - path: /media

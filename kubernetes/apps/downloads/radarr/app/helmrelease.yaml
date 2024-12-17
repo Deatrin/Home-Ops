@@ -1,8 +1,9 @@
+---
 # yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
-  name: &app radarr
+  name: radarr
 spec:
   interval: 30m
   chart:
@@ -22,23 +23,26 @@ spec:
       strategy: rollback
       retries: 3
   dependsOn:
-  - name: rook-ceph-cluster
-    namespace: rook-ceph
-  - name: volsync
-    namespace: storage
+    - name: rook-ceph-cluster
+      namespace: rook-ceph
   values:
     controllers:
       radarr:
-        labels:
-          nfsMount: "true"
-          postgres: "true"
         annotations:
           reloader.stakater.com/auto: "true"
+        initContainers:
+          init-db:
+            image:
+              repository: ghcr.io/onedr0p/postgres-init
+              tag: 16
+            envFrom: &envFrom
+              - secretRef:
+                  name: radarr-secret
         containers:
           app:
             image:
-              repository: ghcr.io/joryirving/radarr-develop
-              tag: 5.16.3.9541@sha256:cf03d1cbc991c49178dc82bc7b65e1cfb4fc7bd949e9dc95ac3255799c1a3971
+              repository: ghcr.io/onedr0p/radarr-develop
+              tag: 5.16.1.9508@sha256:630bb09a9160fa7cf932cc79cc04034b4439f3f91ffbd95887233c1e26a433bb
             env:
               RADARR__APP__INSTANCENAME: Radarr
               RADARR__APP__THEME: dark
@@ -48,10 +52,8 @@ spec:
               RADARR__LOG__LEVEL: info
               RADARR__SERVER__PORT: &port 80
               RADARR__UPDATE__BRANCH: develop
-              TZ: ${TIMEZONE}
-            envFrom:
-            - secretRef:
-                name: radarr-secret
+              TZ: America/New_York
+            envFrom: *envFrom
             probes:
               liveness: &probes
                 enabled: true
@@ -73,7 +75,7 @@ spec:
               requests:
                 cpu: 100m
               limits:
-                memory: 2Gi
+                memory: 4Gi
     defaultPodOptions:
       securityContext:
         runAsNonRoot: true
@@ -84,38 +86,38 @@ spec:
         seccompProfile: { type: RuntimeDefault }
     service:
       app:
-        controller: *app
+        controller: radarr
         ports:
           http:
             port: *port
     ingress:
       app:
-        className: internal
         annotations:
-          gethomepage.dev/enabled: "true"
-          gethomepage.dev/group: Downloads
-          gethomepage.dev/name: Radarr
-          gethomepage.dev/icon: radarr.png
-          gethomepage.dev/description: Movie Downloads
-          gethomepage.dev/widget.type: radarr
-          gethomepage.dev/widget.url: http://radarr.downloads
-          gethomepage.dev/widget.key: "{{ `{{HOMEPAGE_VAR_RADARR_TOKEN}}` }}"
           external-dns.alpha.kubernetes.io/target: internal.${SECRET_DOMAIN}
+        className: internal
         hosts:
-        - host: "{{ .Release.Name }}.${SECRET_DOMAIN}"
-          paths:
-          - path: /
-            service:
-              identifier: app
-              port: http
+          - host: "{{ .Release.Name }}.${SECRET_DOMAIN}"
+            paths:
+              - path: /
+                service:
+                  identifier: app
+                  port: http
     persistence:
       config:
-        existingClaim: *app
+        existingClaim: radarr
+      scripts:
+        type: configMap
+        name: radarr-configmap
+        defaultMode: 0775
+        globalMounts:
+          - path: /scripts/pushover-notify.sh
+            subPath: pushover-notify.sh
+            readOnly: true
       tmp:
         type: emptyDir
-      data:
+      media:
         type: nfs
-        server: voyager.internal
-        path: ${SECRET_NFS_DATA:=temp}
+        server: expanse.internal
+        path: /mnt/eros/Media
         globalMounts:
-        - path: /data
+          - path: /media

@@ -3,7 +3,7 @@
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
-  name: &app qbittorrent
+  name: qbittorrent
 spec:
   interval: 30m
   chart:
@@ -28,19 +28,25 @@ spec:
   values:
     controllers:
       qbittorrent:
-        labels:
-          nfsMount: "true"
         annotations:
           reloader.stakater.com/auto: "true"
         containers:
           app:
             image:
-              repository: ghcr.io/joryirving/qbittorrent-beta
-              tag: 5.0.2@sha256:08f703350710b6e90413881e2648ad7efc8ed2a082ea5e12f73cabfed36cba06
+              repository: ghcr.io/onedr0p/qbittorrent-beta
+              tag: 5.0.2@sha256:da52bb1039884ba8f3ecc7dcf71212d64554af676b636a01a39bd7b04b5002bb
             env:
-              TZ: ${TIMEZONE}
+              TZ: America/New_York
               QBT_WEBUI_PORT: &port 80
               QBT_TORRENTING_PORT: &torrentPort 50413
+              CROSS_SEED_ENABLED: false
+              CROSS_SEED_HOST: cross-seed.default.svc.cluster.local
+              CROSS_SEED_PORT: 80
+              CROSS_SEED_SLEEP_INTERVAL: 0
+              PUSHOVER_ENABLED: true
+            envFrom:
+              - secretRef:
+                  name: qbittorrent-secret
             probes:
               liveness:
                 enabled: true
@@ -50,72 +56,44 @@ spec:
                 enabled: true
                 spec:
                   failureThreshold: 30
-                  periodSeconds: 5
+                  periodSeconds: 10
             securityContext:
-              runAsUser: 568
-              runAsGroup: 568
-              runAsNonRoot: true
               allowPrivilegeEscalation: false
               readOnlyRootFilesystem: true
               capabilities: { drop: ["ALL"] }
             resources:
               requests:
-                cpu: 25m
-                memory: 1Gi
+                cpu: 100m
               limits:
                 memory: 8Gi
     defaultPodOptions:
-      terminationGracePeriodSeconds: 120
-      nodeSelector:
-        topology.kubernetes.io/zone: worker
-      affinity:
-        podAntiAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-            - weight: 100
-              podAffinityTerm:
-                labelSelector:
-                  matchExpressions:
-                    - key: app.kubernetes.io/name
-                      operator: In
-                      values: ["sabnzbd"]
-                topologyKey: kubernetes.io/hostname
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 568
+        runAsGroup: 568
+        fsGroup: 568
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile: { type: RuntimeDefault }
     service:
       app:
-        controller: *app
-        nameOverride: *app
+        controller: qbittorrent
+        type: LoadBalancer
+        annotations:
+          lbipam.cilium.io/ips: 192.168.42.122
         ports:
           http:
             port: *port
-      bittorrent:
-        controller: *app
-        type: LoadBalancer
-        annotations:
-          lbipam.cilium.io/ips: ${SVC_QBITTTORENT_ADDR:=temp}
-        ports:
           bittorrent:
             enabled: true
             port: *torrentPort
             protocol: TCP
     ingress:
       app:
-        className: internal
         annotations:
-          gethomepage.dev/enabled: "true"
-          gethomepage.dev/group: Downloads
-          gethomepage.dev/name: qBittorrent
-          gethomepage.dev/icon: qbittorrent.png
-          gethomepage.dev/description: Torrent Client
-          gethomepage.dev/widget.type: qbittorrent
-          gethomepage.dev/widget.url: http://qbittorrent.downloads
-          gethomepage.dev/widget.username: "{{ `{{HOMEPAGE_VAR_QBITTORRENT_USERNAME}}` }}"
-          gethomepage.dev/widget.password: "{{ `{{HOMEPAGE_VAR_QBITTORRENT_PASSWORD}}` }}"
           external-dns.alpha.kubernetes.io/target: internal.${SECRET_DOMAIN}
-          nginx.ingress.kubernetes.io/configuration-snippet: |
-            proxy_hide_header "x-webkit-csp";
-            proxy_hide_header "content-security-policy";
-            proxy_hide_header "X-Frame-Options";
+        className: internal
         hosts:
-          - host: "{{ .Release.Name }}.${SECRET_DOMAIN}"
+          - host: qb.${SECRET_DOMAIN}
             paths:
               - path: /
                 service:
@@ -123,13 +101,19 @@ spec:
                   port: http
     persistence:
       config:
-        existingClaim: *app
-      downloads:
-        type: nfs
-        server: voyager.internal
-        path: ${SECRET_NFS_DATA:=temp}
-        globalMounts:
-          - path: /downloads
-            subPath: torrents
+        existingClaim: qbittorrent
       tmp:
         type: emptyDir
+      scripts:
+        type: configMap
+        name: qbittorrent-scripts
+        defaultMode: 0775
+        globalMounts:
+          - readOnly: true
+      media:
+        type: nfs
+        server: expanse.internal
+        path: /mnt/eros/Media
+        globalMounts:
+          - path: /media/Downloads/qbittorrent
+            subPath: Downloads/qbittorrent
