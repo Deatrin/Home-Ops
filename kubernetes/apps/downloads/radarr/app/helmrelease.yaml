@@ -22,9 +22,6 @@ spec:
     remediation:
       strategy: rollback
       retries: 3
-  dependsOn:
-    - name: rook-ceph-cluster
-      namespace: rook-ceph
   values:
     controllers:
       radarr:
@@ -52,7 +49,7 @@ spec:
               RADARR__LOG__LEVEL: info
               RADARR__SERVER__PORT: &port 80
               RADARR__UPDATE__BRANCH: develop
-              TZ: America/New_York
+              TZ: America/Los_Angeles
             envFrom: *envFrom
             probes:
               liveness: &probes
@@ -94,6 +91,14 @@ spec:
       app:
         annotations:
           external-dns.alpha.kubernetes.io/target: internal.${SECRET_DOMAIN}
+          # gethomepage.dev/enabled: "true"
+          # gethomepage.dev/group: Downloads
+          # gethomepage.dev/name: Radarr
+          # gethomepage.dev/icon: radarr.png
+          # gethomepage.dev/description: Movie Downloads
+          # gethomepage.dev/widget.type: radarr
+          # gethomepage.dev/widget.url: http://radarr.downloads
+          # gethomepage.dev/widget.key: "{{ `{{HOMEPAGE_VAR_RADARR_TOKEN}}` }}"
         className: internal
         hosts:
           - host: "{{ .Release.Name }}.${SECRET_DOMAIN}"
@@ -117,7 +122,7 @@ spec:
         type: emptyDir
       media:
         type: nfs
-        server: expanse.internal
-        path: /mnt/eros/Media
+        server: ${INTERNAL_NAS}
+        path: ${NAS_MEDIA}
         globalMounts:
           - path: /media
