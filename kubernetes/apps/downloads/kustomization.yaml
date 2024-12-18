@@ -6,7 +6,7 @@ resources:
   #### Namespace
   - ./namespace.yaml
   #### KS
-  # - ./autobrr/ks.yaml
+  - ./autobrr/ks.yaml
   # - ./omegabrr/ks.yaml
   - ./prowlarr/ks.yaml
   - ./radarr/ks.yaml
