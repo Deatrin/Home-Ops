@@ -8,5 +8,5 @@ resources:
   # Flux-Kustomizations
   # - ./actual/ks.yaml
   # - ./atuin/ks.yaml
-  - ./homepage/ks.yaml
+  # - ./homepage/ks.yaml
   # - ./lubelog/ks.yaml
