@@ -129,9 +129,6 @@ data:
         provider: [duckduckgo, google]
         focus: false
         target: _blank
-    - greeting:
-        text_size: xl
-        text: "Howdy Hey!"
     - kubernetes:
         cluster:
           cpu: true
