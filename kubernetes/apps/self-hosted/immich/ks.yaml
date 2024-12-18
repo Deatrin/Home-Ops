@@ -6,11 +6,11 @@ metadata:
   name: selfhosted-immich
   namespace: flux-system
 spec:
-  path: ./kubernetes/talos/apps/selfhosted/immich/app
-  targetNamespace: selfhosted
+  path: ./kubernetes/apps/self-hosted/immich/app
+  targetNamespace: self-hosted
   sourceRef:
     kind: GitRepository
-    name: homelab-ops
+    name: home-kubernetes
   commonMetadata:
     labels:
       app.kubernetes.io/name: &appname immich
@@ -18,13 +18,12 @@ spec:
   wait: false
   interval: 10m
   dependsOn:
-    - name: database-dragonfly-cluster
-    - name: database-cloudnative-pg-cluster
-    - name: security-secret-store
-    - name: storage-democratic-csi-nfs
+    - name: dragonfly-cluster
+    - name: cloudnative-pg-cluster
+    - name: external-secret-store
   postBuild:
     substitute:
       APP: *appname
-      HOSTNAME: photos.${PUBLIC_DOMAIN}
+      HOSTNAME: photos.${SECRET_DOMAIN}
       APP_UID: "568"
       APP_GID: "568"
