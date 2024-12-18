@@ -22,9 +22,6 @@ spec:
     remediation:
       strategy: rollback
       retries: 3
-  dependsOn:
-    - name: rook-ceph-cluster
-      namespace: rook-ceph
   values:
     controllers:
       bazarr:
@@ -36,7 +33,7 @@ spec:
               repository: ghcr.io/onedr0p/bazarr
               tag: 1.4.5@sha256:a7bceefd6339f906b2955adf66dd8ada7c9d91b363b1389474652af9f7dd5840
             env:
-              TZ: America/New_York
+              TZ: America/Los_Angeles
             envFrom:
               - secretRef:
                   name: bazarr-secret
