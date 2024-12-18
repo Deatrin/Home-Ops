@@ -1,0 +1,34 @@
+---
+title: Dashboard
+favicon: https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/homepage.png
+theme: dark
+background:
+  image: https://raw.githubusercontent.com/Deatrin/Home-Ops/main/docs/src/assets/chill_firewatch.png
+  opacity: 20
+color: slate
+headerStyle: clean
+quicklaunch:
+  searchDescriptions: true
+  hideInternetSearch: true
+  showSearchSuggestions: true
+  hideVisitURL: true
+layout:
+  Calendar:
+    style: column
+    icon: mdi-calendar
+  Infrastructure:
+    style: row
+    columns: 3
+    icon: mdi-server
+  Storage:
+    style: row
+    columns: 2
+    icon: mdi-desktop-tower
+  Downloads:
+    style: row
+    columns: 3
+    icon: mdi-download-circle
+  Security:
+    style: row
+    columns: 1
+    icon: mdi-lock
