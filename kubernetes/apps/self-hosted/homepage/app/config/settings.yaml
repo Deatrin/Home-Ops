@@ -4,7 +4,7 @@ favicon: https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/homepage.png
 theme: dark
 background:
   image: https://raw.githubusercontent.com/Deatrin/Home-Ops/main/docs/src/assets/chill_firewatch.png
-  opacity: 20
+  opacity: 25
 color: slate
 headerStyle: clean
 quicklaunch:
